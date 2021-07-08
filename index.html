@@ -1,0 +1,89 @@
+<style>
+  #chat {
+    padding:0;
+    margin:0;
+    height:100%;
+    width:100%;
+    display:flex;
+    flex-flow:column nowrap;
+  }
+
+  #messageBox {
+    overflow:scroll;
+    width:100%;
+    flex-grow:1;
+  }
+
+  #inputArea {
+    width:100%;
+    float:bottom;
+  }
+
+  #chatInput {
+    width:100%;
+  }
+</style>
+
+<div id="chat">
+  <h1 id="title">Chat App</h1>
+  <div id="messageBox"></div>
+  <div id="inputArea">
+    <input type="text" name="chatInput" id="chatInput" placeholder="Enter your message...">
+    <button id="send">Send</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const port = 8000;
+
+    const
+      messageBox = document.querySelector("#messageBox"),
+      chatInput = document.querySelector("#chatInput"),
+      sendBtn = document.querySelector("#send");
+
+    function showMessage(msg) {
+      messageBox.innerHTML += `<br><br>${msg}`;
+      messageBox.scrollTop = messageBox.scrollHeight;
+      chatInput.value = "";
+    }
+
+    let ws;
+    function init() {
+      if (ws) {
+        ws.onerror = ws.onopen = ws.onclose = null;
+        ws.close();
+      }
+
+      ws = new WebSocket("ws://localhost:8000/");
+      ws.onopen = function opened() {
+        console.log("Connection opened.");
+      }
+      ws.onclose = function closed() {
+        console.log("Connection closed.");
+        ws = null;
+      }
+      ws.onmessage = ({ data }) => showMessage(data);
+    }
+
+    function sendClicked(event = null) {
+      console.log("sendClicked: ", event)
+
+      // only respond on Enter key
+      if (event != null && event.key !== "Enter") return;
+
+      if (!ws) {
+        showMessage("No websocket connection.");
+        return;
+      }
+
+      ws.send(chatInput.value);
+      showMessage(chatInput.value);
+    }
+
+    sendBtn.onclick = sendClicked;
+    chatInput.addEventListener("keydown", sendClicked);
+
+    init();
+  })();
+</script>
